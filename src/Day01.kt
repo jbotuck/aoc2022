@@ -1,17 +1,25 @@
 fun main() {
-    fun part1(input: List<String>): Int {
-        return input.size
+    val lines = readInput("Day01")
+    val elfTotals = lines
+        .fold(mutableListOf(mutableListOf<Int>())) { acc, s ->
+            acc.apply {
+                s.toIntOrNull()
+                    ?.let { last().add(it) }
+                    ?: add(mutableListOf())
+            }
+        }.map { it.sum() }
+        .toList()
+
+    val top3 = mutableListOf<Int>()
+    for (elfTotal in elfTotals) {
+        if (top3.size == 3 && elfTotal > top3.first()) top3.removeFirst()
+        if (top3.size < 3) {
+            top3.add(elfTotal)
+            top3.sort()
+        }
     }
-
-    fun part2(input: List<String>): Int {
-        return input.size
-    }
-
-    // test if implementation meets criteria from the description, like:
-    val testInput = readInput("Day01_test")
-    check(part1(testInput) == 1)
-
-    val input = readInput("Day01")
-    println(part1(input))
-    println(part2(input))
+    println("part 1")
+    println(top3.last())
+    println("part 2")
+    println(top3.sum())
 }
