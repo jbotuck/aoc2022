@@ -1,15 +1,11 @@
 fun main() {
     val lines = readInput("Day01")
-    val top3 = lines
-        .fold(mutableListOf(mutableListOf<Int>())) { acc, s ->
-            acc.apply {
-                s.toIntOrNull()
-                    ?.let { last().add(it) }
-                    ?: add(mutableListOf())
-            }
-        }.map { it.sum() }
-        .sorted()
-        .takeLast(3)
+
+    val top3 = mutableListOf(0).apply {
+        for (line in lines) {
+            line.toIntOrNull()?.let { set(lastIndex, last() + it) } ?: add(0)
+        }
+    }.sorted().takeLast(3)
 
     println("part 1")
     println(top3.last())
