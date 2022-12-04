@@ -6,13 +6,18 @@ fun main() {
 
 private fun Char.priority() = if (isUpperCase()) code % 'A'.code + 27 else code % 'a'.code + 1
 
-private fun part1(line: String): Int {
-    val compartmentSize = line.length / 2
-    return line.substring(0, compartmentSize).toSet()
-        .intersect(line.substring(compartmentSize).toSet())
-        .first().priority()
-}
+private fun part1(line: String) = line
+    .chunked(line.length / 2)
+    .map { it.toSet() }
+    .reduce { a, b -> a.intersect(b) }
+    .first()
+    .priority()
 
-fun part2(group: List<String>) = group.map { it.toSet() }.reduce { a, b -> a.intersect(b) }.first().priority()
+
+fun part2(group: List<String>) = group
+    .map { it.toSet() }
+    .reduce { a, b -> a.intersect(b) }
+    .first()
+    .priority()
 
 
