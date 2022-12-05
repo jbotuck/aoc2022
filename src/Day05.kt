@@ -51,13 +51,8 @@ private fun Map<Char, ArrayDeque<Char>>.execute2(line: String) {
     val count = split[1].toInt()
     val from = get(split[3].first())!!
     val to = get(split[5].first())!!
-    val temp = ArrayDeque<Char>()
-    repeat(count) {
-        temp.addLast(from.removeLast())
-    }
-    for (item in temp.reversed()) {
-        to.addLast(item)
-    }
+    to.addAll(from.takeLast(count))
+    from.subList(from.size - count, from.size).clear()
 }
 
 private fun topOfEach(stacks: Map<Char, ArrayDeque<Char>>) = stacks.keys.sorted()
