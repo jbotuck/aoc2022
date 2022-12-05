@@ -8,17 +8,17 @@ fun main() {
 }
 
 private fun part1(lines: List<String>, indexOfStackKeyLine: Int): String {
-    val stacks = parseStacks(lines.subList(0, indexOfStackKeyLine).asReversed(), lines[indexOfStackKeyLine])
-    for (line in lines.subList(indexOfStackKeyLine + 2, lines.size)) {
-        stacks.execute1(line)
-    }
-    return topOfEach(stacks)
+    return solve(lines, indexOfStackKeyLine, 1)
 }
 
 private fun part2(lines: List<String>, indexOfStackKeyLine: Int): String {
+    return solve(lines, indexOfStackKeyLine, 2)
+}
+
+private fun solve(lines: List<String>, indexOfStackKeyLine: Int, part: Int): String {
     val stacks = parseStacks(lines.subList(0, indexOfStackKeyLine).asReversed(), lines[indexOfStackKeyLine])
     for (line in lines.subList(indexOfStackKeyLine + 2, lines.size)) {
-        stacks.execute2(line)
+        stacks.parseInstruction(line).execute(part)
     }
     return topOfEach(stacks)
 }
@@ -36,25 +36,32 @@ fun parseStacks(lines: List<String>, key: String) = mutableMapOf<Char, ArrayDequ
         }
     }.toMap()
 
-private fun Map<Char, ArrayDeque<Char>>.execute1(line: String) {
+private fun Map<Char, ArrayDeque<Char>>.parseInstruction(line: String): Instruction {
     val split = line.split(" ")
-    val count = split[1].toInt()
-    val from = get(split[3].first())!!
-    val to = get(split[5].first())!!
-    repeat(count) {
-        to.addLast(from.removeLast())
-    }
-}
-
-private fun Map<Char, ArrayDeque<Char>>.execute2(line: String) {
-    val split = line.split(" ")
-    val count = split[1].toInt()
-    val from = get(split[3].first())!!
-    val to = get(split[5].first())!!
-    to.addAll(from.takeLast(count))
-    from.subList(from.size - count, from.size).clear()
+    return Instruction(
+        count = split[1].toInt(),
+        from = get(split[3].first())!!,
+        to = get(split[5].first())!!
+    )
 }
 
 private fun topOfEach(stacks: Map<Char, ArrayDeque<Char>>) = stacks.keys.sorted()
     .map { stacks[it]!!.last() }
     .joinToString("")
+
+data class Instruction(val count: Int, val from: ArrayDeque<Char>, val to: ArrayDeque<Char>) {
+    private fun execute1() {
+        repeat(count) {
+            to.addLast(from.removeLast())
+        }
+    }
+
+    private fun execute2() {
+        to.addAll(from.takeLast(count))
+        from.subList(from.size - count, from.size).clear()
+    }
+
+    fun execute(part: Int) {
+        if (part == 1) execute1() else execute2()
+    }
+}
