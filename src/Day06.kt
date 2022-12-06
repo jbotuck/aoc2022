@@ -7,10 +7,7 @@ fun main() {
 }
 
 private fun solve(line: String, windowSize: Int) = line
-    .asSequence()
-    .withIndex()
-    .windowed(windowSize)
-    .first { window ->
-        window.map { it.value }.toSet().size == windowSize
-    }.last()
-    .index + 1
+    .windowedSequence(windowSize)
+    .indexOfFirst {
+        it.toSet().size == windowSize
+    } + windowSize
