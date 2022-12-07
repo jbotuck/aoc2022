@@ -8,9 +8,9 @@ fun main() {
 private fun solve(lines: List<String>) {
     @Suppress("NAME_SHADOWING")
     val lines = ArrayDeque(lines)
-    val lastVisited = ArrayDeque<SystemFile>()
-    val root = SystemFile("root", null, mutableMapOf())
-    val allFiles = mutableListOf<SystemFile>()
+    val lastVisited = ArrayDeque<Directory>()
+    val root = Directory("root")
+    val allFiles = mutableListOf<SystemObject>()
     while (lines.isNotEmpty()) {
         when (val line = lines.removeFirst()) {
             "\$ ls" -> {
@@ -27,7 +27,6 @@ private fun solve(lines: List<String>) {
             }
 
             "\$ cd /" -> { //only happens once in my input so not bothering to back up one level at a time
-                lastVisited.clear()
                 lastVisited.add(root)
             }
 
@@ -36,45 +35,57 @@ private fun solve(lines: List<String>) {
     }
     while (lastVisited.isNotEmpty()) lastVisited.removeLast().apply { recalculateSize() }
     val part1 =
-        allFiles.filter { it.children != null }.map { it.size!! }.filter { it < BigInteger("100000") }.sumOf { it }
+        allFiles
+            .filterIsInstance<Directory>()
+            .map { it.size!! }
+            .filter { it < BigInteger("100000") }
+            .sumOf { it }
     println("part 1 $part1")
     val freeSpaceStillNeeded = BigInteger("30000000").minus(BigInteger("70000000").minus(root.size!!))
-    val part2 = allFiles.filter { it.children != null }.map { it.size!! }.filter { it >= freeSpaceStillNeeded }.min()
+    val part2 = allFiles
+        .filterIsInstance<Directory>()
+        .map { it.size!! }
+        .filter { it >= freeSpaceStillNeeded }
+        .min()
     println("part 2 $part2")
 
 }
 
-private data class SystemFile(
+private sealed class SystemObject(
     val name: String,
-    var size: BigInteger? = null,
-    val children: MutableMap<String, SystemFile>? = null
+    open val size: BigInteger?
 ) {
-
     companion object {
-        fun of(lsOutput: String): SystemFile {
+        fun of(lsOutput: String): SystemObject {
             val split = lsOutput.split(" ")
-            if (split.first() == "dir") return SystemFile(split.last(), children = mutableMapOf())
-            return SystemFile(split.last(), BigInteger(split.first()))
+            if (split.first() == "dir") return Directory(split.last())
+            return DataFile(split.last(), BigInteger(split.first()))
         }
     }
+}
 
-    fun updateWithLsOutput(files: List<String>): List<SystemFile> {
+private class DataFile(name: String, size: BigInteger) : SystemObject(name, size)
+
+private class Directory(name: String) : SystemObject(name, null) {
+    override var size: BigInteger? = super.size
+    val children = mutableMapOf<String, SystemObject>()
+    fun updateWithLsOutput(files: List<String>): List<SystemObject> {
         return files
             .map { of(it) }
-            .filter { it.name !in children!!.keys }
+            .filter { it.name !in children.keys }
             .also { list ->
-                for (file in list) children!![file.name] = file
+                for (file in list) children[file.name] = file
                 recalculateSize()
             }
     }
 
     fun recalculateSize() {
         if (size != null) return
-        if (children!!.values.all { it.size != null }) size = children.values.sumOf { it.size!! }
+        size = children.values.sumOf { it.size ?: return }
     }
 
-    fun cd(directory: String): SystemFile {
-        return children!![directory] ?: SystemFile(directory, children = mutableMapOf()).also {
+    fun cd(directory: String): Directory {
+        return children[directory] as? Directory ?: Directory(directory).also {
             children[directory] = it
         }
     }
