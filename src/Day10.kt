@@ -24,7 +24,7 @@ class CPU {
     private fun tick() {
         val position = cyclesRan % 40
         if (position == 0) println()
-        if (position in x.dec()..x.inc()) print('#') else print('.')
+        if (position in x.dec()..x.inc()) print('⚫') else print('⚪')
         cyclesRan++
         if (cyclesRan in listOf(20, 60, 100, 140, 180, 220)) {
             part1Values.add(x * cyclesRan)
