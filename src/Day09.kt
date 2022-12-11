@@ -16,9 +16,9 @@ fun main() {
 }
 
 private data class Point(val x: Int = 0, val y: Int = 0) {
-    fun follow(head: Point): Point {
-        val xDiff = head.x - x
-        val yDiff = head.y - y
+    fun follow(other: Point): Point {
+        val xDiff = other.x - x
+        val yDiff = other.y - y
         return if (abs(xDiff) > 1 || abs(yDiff) > 1) {
             Point(
                 x + sign(xDiff.toDouble()).toInt(),
