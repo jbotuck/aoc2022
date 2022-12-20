@@ -35,10 +35,11 @@ fun main() {
     //part 2
     val paths = getPaths(start, valvesWithNeighbors, 26)
     paths.maxOf { me ->
-        paths
+        me.value.plus(paths
             .filter { elephant -> elephant.key.all { it !in me.key } }
-            .maxOfOrNull { elephant -> elephant.value + me.value }
+            .maxOfOrNull { elephant -> elephant.value }
             ?: 0
+        )
     }.let { println(it) }
 }
 
