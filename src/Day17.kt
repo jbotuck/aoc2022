@@ -1,12 +1,24 @@
 import kotlin.math.max
 
-@Suppress("UnnecessaryVariable", "UNUSED_VARIABLE")
 fun main() {
-    val board17 = TetrisBoard(readInput("Day17").first())
-    val boardSample = TetrisBoard(">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>")
-    val board = board17
-    board.play()
-    println(board.height())
+    @Suppress("unused")
+    fun board17() = TetrisBoard(readInput("Day17").first())
+
+    @Suppress("unused")
+    fun boardSample() = TetrisBoard(">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>")
+    val boardFast = board17()
+    val boardSlow = board17()
+    do {
+        boardFast.play(2)
+        boardSlow.play(1)
+    } while (!boardFast.hasSameNormalizedStateAs(boardSlow))
+    val heightDiff = boardFast.height() - boardSlow.height()
+    val shapesDiff = boardFast.differenceInShapesLanded(boardSlow)
+    val numberOfCycles = 1_000_000_000_000 / shapesDiff
+    val totalCycleLength = numberOfCycles * shapesDiff
+    val totalCycleValue = numberOfCycles * heightDiff
+    board17().apply { play(1_000_000_000_000 - totalCycleLength) }.height().plus(totalCycleValue).let { println(it) }
+    boardSample().apply { play() }.height().let { println("Simple Solution: $it") }
 }
 
 private data class Shape(val points: Set<Pair<Int, Long>>) {
@@ -26,19 +38,21 @@ private val shapeBlueprints = listOf(
 private class TetrisBoard(val input: String) {
     private var nextInputIndex = 0
     private var rocks = mutableSetOf<Pair<Int, Long>>()
-    private var shapesGenerated = 0
+    private var shapesLanded = 0L
     private var indexOfHighestStone = -1L
 
     private var offset = 0L
     private var shape = generateShape()
 
     fun height() = offset + indexOfHighestStone.inc()
-    private fun generateShape() = shapeBlueprints[shapesGenerated++ % shapeBlueprints.size]
+    private fun generateShape() = shapeBlueprints[nextShapeIndex()]
         .addY(indexOfHighestStone + 4)
 
+    private fun nextShapeIndex() = (shapesLanded % shapeBlueprints.size).toInt()
 
-    fun play(numberOfRocksToPlay: Long = 2022) {
-        while (shapesGenerated <= numberOfRocksToPlay) {
+    fun play(numberOfAdditionalShapesToPlay: Long = 2022) {
+        val numberOfShapesToPlay = shapesLanded + numberOfAdditionalShapesToPlay
+        while (shapesLanded < numberOfShapesToPlay) {
             playUntilLanding()
         }
     }
@@ -64,6 +78,7 @@ private class TetrisBoard(val input: String) {
     private fun setInStone(shape: Shape) {
         rocks.addAll(shape.points)
         indexOfHighestStone = max(indexOfHighestStone, shape.maxHeight())
+        shapesLanded++
         normalize()
     }
 
@@ -99,6 +114,15 @@ private class TetrisBoard(val input: String) {
         return points.all {
             it.first in 0..6 && it.second >= 0 && it !in rocks
         }
+    }
+
+    fun hasSameNormalizedStateAs(other: TetrisBoard) =
+        rocks == other.rocks &&
+                nextInputIndex == other.nextInputIndex &&
+                shapesLanded % shapeBlueprints.size == other.shapesLanded % shapeBlueprints.size
+
+    fun differenceInShapesLanded(other: TetrisBoard): Long {
+        return shapesLanded - other.shapesLanded
     }
 }
 
