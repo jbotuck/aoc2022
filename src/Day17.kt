@@ -1,22 +1,12 @@
 import kotlin.math.max
 
+@Suppress("UnnecessaryVariable", "UNUSED_VARIABLE")
 fun main() {
-    val board = TetrisBoard()
-    board.play(myIterator(readInput("Day17").first()))
-    //board.play(myIterator(">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>"))
-    println(board.indexOfHighestStone.inc())
-}
-
-private fun myIterator(s: String): Iterator<Char> {
-    var iterator = s.iterator()
-    return object : Iterator<Char> {
-        override fun hasNext() = true
-
-        override fun next() = if (iterator.hasNext()) iterator.next() else {
-            iterator = s.iterator()
-            iterator.next()
-        }
-    }
+    val board17 = TetrisBoard(readInput("Day17").first())
+    val boardSample = TetrisBoard(">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>")
+    val board = board17
+    board.play()
+    println(board.height())
 }
 
 private data class Shape(val points: Set<Pair<Int, Long>>) {
@@ -33,25 +23,30 @@ private val shapeBlueprints = listOf(
     Shape((2..3).flatMap { x -> (0L..1L).map { y -> x to y } }.toSet())
 )
 
-private class TetrisBoard {
-    val rocks = mutableSetOf<Pair<Int, Long>>()
-    var shapesGenerated = 0
-    var indexOfHighestStone = -1L
-    var shape = generateShape()
+private class TetrisBoard(val input: String) {
+    private var nextInputIndex = 0
+    private var rocks = mutableSetOf<Pair<Int, Long>>()
+    private var shapesGenerated = 0
+    private var indexOfHighestStone = -1L
 
+    private var offset = 0L
+    private var shape = generateShape()
+
+    fun height() = offset + indexOfHighestStone.inc()
     private fun generateShape() = shapeBlueprints[shapesGenerated++ % shapeBlueprints.size]
         .addY(indexOfHighestStone + 4)
 
 
-    fun play(input: Iterator<Char>, numberOfRocksToPlay: Long = 2022) {
+    fun play(numberOfRocksToPlay: Long = 2022) {
         while (shapesGenerated <= numberOfRocksToPlay) {
-            playUntilLanding(input)
+            playUntilLanding()
         }
     }
 
-    private fun playUntilLanding(input: Iterator<Char>) {
+    private fun playUntilLanding() {
         while (true) {
-            applyInput(input.next())
+            applyInput(input[nextInputIndex++])
+            if (nextInputIndex == input.length) nextInputIndex = 0
             if (!moveDown()) break
         }
         setInStone(shape)
@@ -69,6 +64,35 @@ private class TetrisBoard {
     private fun setInStone(shape: Shape) {
         rocks.addAll(shape.points)
         indexOfHighestStone = max(indexOfHighestStone, shape.maxHeight())
+        normalize()
+    }
+
+    private fun normalize() {
+        val unreachableRows = unreachableRows()
+        if (unreachableRows > 0) {
+            offset += unreachableRows
+            indexOfHighestStone -= unreachableRows
+            rocks = rocks.map { it.first to it.second.minus(unreachableRows) }.filter { it.second >= 0 }.toMutableSet()
+        }
+    }
+
+    private fun unreachableRows(): Long {
+        val toVisit = ArrayDeque<Pair<Int, Long>>().apply { addLast(0 to indexOfHighestStone.inc()) }
+        val visited = mutableSetOf<Pair<Int, Long>>()
+        while (toVisit.isNotEmpty()) {
+            val visiting = toVisit.removeFirst()
+            visiting
+                .neighbors()
+                .asSequence()
+                .filter { it !in visited }
+                .filter { it !in rocks }
+                .filter { it.first >= 0 && it.second >= 0L }
+                .filter { it.first <= 6 }
+                .filter { it.second <= indexOfHighestStone.inc() }
+                .let { toVisit.addAll(it) }
+            visited.add(visiting)
+        }
+        return visited.minOf { it.second }
     }
 
     private fun Shape.isValid(): Boolean {
@@ -77,4 +101,7 @@ private class TetrisBoard {
         }
     }
 }
+
+private fun Pair<Int, Long>.neighbors() =
+    listOf(first to second.inc(), first to second.dec(), first.inc() to second, first.dec() to second)
 
