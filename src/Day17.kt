@@ -6,19 +6,26 @@ fun main() {
 
     @Suppress("unused")
     fun boardSample() = TetrisBoard(">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>")
-    val boardFast = board17()
-    val boardSlow = board17()
+    fun board() = board17() //change to use sample
+    val shapesToPlay = 1_000_000_000_000 //change for part 1
+    //find the cycle
+    val boardFast = board()
+    val boardSlow = board()
     do {
         boardFast.play(2)
         boardSlow.play(1)
     } while (!boardFast.hasSameNormalizedStateAs(boardSlow))
+
+    //evaluate the cycle
     val heightDiff = boardFast.height() - boardSlow.height()
     val shapesDiff = boardFast.differenceInShapesLanded(boardSlow)
-    val numberOfCycles = 1_000_000_000_000 / shapesDiff
-    val totalCycleLength = numberOfCycles * shapesDiff
-    val totalCycleValue = numberOfCycles * heightDiff
-    board17().apply { play(1_000_000_000_000 - totalCycleLength) }.height().plus(totalCycleValue).let { println(it) }
-    boardSample().apply { play() }.height().let { println("Simple Solution: $it") }
+
+    //use the cycle and the remainder to calculate the result
+    board()
+        .apply { play(shapesToPlay % shapesDiff) }
+        .height()
+        .plus(shapesToPlay / shapesDiff * heightDiff)
+        .let { println(it) }
 }
 
 private data class Shape(val points: Set<Pair<Int, Long>>) {
